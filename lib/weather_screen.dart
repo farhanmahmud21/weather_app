@@ -1,8 +1,31 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart';
+import 'package:http/http.dart' as http;
+import 'package:weather_app/adInfoCard.dart';
 import 'package:weather_app/hourly_forecast_item.dart';
 
-class WeatherScreen extends StatelessWidget {
+class WeatherScreen extends StatefulWidget {
   const WeatherScreen({super.key});
+
+  @override
+  State<WeatherScreen> createState() => _WeatherScreenState();
+}
+
+class _WeatherScreenState extends State<WeatherScreen> {
+  @override
+  void initState() {
+    super.initState();
+    getWeather();
+  }
+
+  var uri =
+      "https://api.openweathermap.org/data/2.5/weather?q=Dhaka,uk&APPID=38f91636dd15e933a6c1c872df8048df";
+  Future<void> getWeather() async {
+    var response = await http.get(Uri.parse(uri));
+    print(response.body);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +74,7 @@ class WeatherScreen extends StatelessWidget {
                 ),
               ),
             ),
-            SizedBox(height: 10),
+            SizedBox(height: 20),
             Text(
               'Weather Forecast',
               style: TextStyle(
@@ -60,12 +83,12 @@ class WeatherScreen extends StatelessWidget {
                 letterSpacing: 1.5,
               ),
             ),
-            SizedBox(height: 5),
+            SizedBox(height: 20),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: HourlyForecastItem(),
             ),
-            SizedBox(height: 10),
+            SizedBox(height: 20),
             Text(
               'Additional Information',
               style: TextStyle(
@@ -74,7 +97,7 @@ class WeatherScreen extends StatelessWidget {
                 letterSpacing: 1.5,
               ),
             ),
-            SizedBox(height: 10),
+            SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -89,8 +112,8 @@ class WeatherScreen extends StatelessWidget {
                   AdTemp: '30',
                 ),
                 AdInfoCard(
-                  AdText: 'Humidity',
-                  adIcon: Icons.water_drop_sharp,
+                  AdText: 'Pressure',
+                  adIcon: Icons.beach_access_sharp,
                   AdTemp: '30',
                 ),
               ],
@@ -98,31 +121,6 @@ class WeatherScreen extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class AdInfoCard extends StatelessWidget {
-  final IconData adIcon;
-  final String AdText;
-  final String AdTemp;
-  const AdInfoCard({
-    super.key,
-    required this.adIcon,
-    required this.AdText,
-    required this.AdTemp,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Icon(adIcon),
-        SizedBox(height: 5),
-        Text(AdText),
-        SizedBox(height: 5),
-        Text(AdTemp),
-      ],
     );
   }
 }
