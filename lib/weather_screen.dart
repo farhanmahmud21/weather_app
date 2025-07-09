@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:http/http.dart' as http;
@@ -14,17 +15,32 @@ class WeatherScreen extends StatefulWidget {
 }
 
 class _WeatherScreenState extends State<WeatherScreen> {
+  double temp = 0;
   @override
   void initState() {
     super.initState();
-    getWeather();
+    // getWeather();
   }
 
   var uri =
-      "https://api.openweathermap.org/data/2.5/weather?q=Dhaka,uk&APPID=38f91636dd15e933a6c1c872df8048df";
+      "https://api.openweathermap.org/data/2.5/forecast?q=London,uk&APPID=38f91636dd15e933a6c1c872df8048df";
   Future<void> getWeather() async {
     var response = await http.get(Uri.parse(uri));
-    print(response.body);
+    var decodedData = json.decode(response.body);
+    // print(response.body);
+    // print(decodedData);
+    // print(response.body);
+
+    // temp = decodedData['list'][0]['main']['temp'] - 273.15;
+
+    if (decodedData['cod'] == '200') {
+      setState(() {});
+      temp = decodedData['list'][0]['main']['temp'] - 273.15;
+      print(temp);
+      return decodedData;
+    } else {
+      throw "Throwed an exception";
+    }
   }
 
   @override
@@ -32,94 +48,111 @@ class _WeatherScreenState extends State<WeatherScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Weather App'),
-        actions: [GestureDetector(child: Icon(Icons.refresh))],
+        actions: [
+          GestureDetector(
+            child: Icon(Icons.refresh),
+            onTap: () {
+              setState(() {
+                getWeather();
+              });
+            },
+          ),
+        ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(10.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              width: double.infinity,
-              child: Card(
-                shadowColor: Colors.white,
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadiusGeometry.circular(14),
-                ),
-                child: Column(
-                  spacing: 10,
-                  mainAxisSize: MainAxisSize.max,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      '300.67° F ',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    Icon(Icons.cloud, size: 50),
-                    SizedBox(height: 10),
-                    Text(
-                      'Cloudy',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                  ],
-                ),
-              ),
-            ),
-            SizedBox(height: 20),
-            Text(
-              'Weather Forecast',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.5,
-              ),
-            ),
-            SizedBox(height: 20),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: HourlyForecastItem(),
-            ),
-            SizedBox(height: 20),
-            Text(
-              'Additional Information',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.5,
-              ),
-            ),
-            SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      body: FutureBuilder(
+        future: getWeather(),
+        builder: (context, snapshot) {
+          print(snapshot);
+          print(snapshot.hasData);
+
+          return Padding(
+            padding: const EdgeInsets.all(10.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AdInfoCard(
-                  AdText: 'Humidity',
-                  adIcon: Icons.water_drop_sharp,
-                  AdTemp: '30',
+                SizedBox(
+                  width: double.infinity,
+                  child: Card(
+                    shadowColor: Colors.white,
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadiusGeometry.circular(14),
+                    ),
+                    child: Column(
+                      spacing: 10,
+                      mainAxisSize: MainAxisSize.max,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '${temp.toStringAsFixed(2)} ° C ',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 10),
+                        Icon(Icons.cloud, size: 50),
+                        SizedBox(height: 10),
+                        Text(
+                          'Cloudy',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 10),
+                      ],
+                    ),
+                  ),
                 ),
-                AdInfoCard(
-                  AdText: 'Humidity',
-                  adIcon: Icons.water_drop_sharp,
-                  AdTemp: '30',
+                SizedBox(height: 20),
+                Text(
+                  'Weather Forecast',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.5,
+                  ),
                 ),
-                AdInfoCard(
-                  AdText: 'Pressure',
-                  adIcon: Icons.beach_access_sharp,
-                  AdTemp: '30',
+                SizedBox(height: 20),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: HourlyForecastItem(),
+                ),
+                SizedBox(height: 20),
+                Text(
+                  'Additional Information',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+                SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    AdInfoCard(
+                      AdText: 'Humidity',
+                      adIcon: Icons.water_drop_sharp,
+                      AdTemp: '30',
+                    ),
+                    AdInfoCard(
+                      AdText: 'Humidity',
+                      adIcon: Icons.water_drop_sharp,
+                      AdTemp: '30',
+                    ),
+                    AdInfoCard(
+                      AdText: 'Pressure',
+                      adIcon: Icons.beach_access_sharp,
+                      AdTemp: '30',
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
