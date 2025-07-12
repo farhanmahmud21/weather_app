@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart';
+
 import 'package:http/http.dart' as http;
 import 'package:weather_app/adInfoCard.dart';
 import 'package:weather_app/hourly_forecast_item.dart';
@@ -15,16 +15,17 @@ class WeatherScreen extends StatefulWidget {
 }
 
 class _WeatherScreenState extends State<WeatherScreen> {
+  late Future<Map<String, dynamic>> weather;
   double temp = 0;
   @override
   void initState() {
     super.initState();
-    // getWeather();
+    weather = getWeather();
   }
 
   var uri =
-      "https://api.openweathermap.org/data/2.5/forecast?q=London,uk&APPID=38f91636dd15e933a6c1c872df8048df";
-  Future<void> getWeather() async {
+      "https://api.openweathermap.org/data/2.5/forecast?q=Dhaka,bd&APPID=38f91636dd15e933a6c1c872df8048df";
+  Future<Map<String, dynamic>> getWeather() async {
     var response = await http.get(Uri.parse(uri));
     var decodedData = json.decode(response.body);
     // print(response.body);
@@ -34,8 +35,10 @@ class _WeatherScreenState extends State<WeatherScreen> {
     // temp = decodedData['list'][0]['main']['temp'] - 273.15;
 
     if (decodedData['cod'] == '200') {
-      setState(() {});
-      temp = decodedData['list'][0]['main']['temp'] - 273.15;
+      setState(() {
+        temp = decodedData['list'][0]['main']['temp'] - 273.15;
+      });
+
       print(temp);
       return decodedData;
     } else {
@@ -60,10 +63,13 @@ class _WeatherScreenState extends State<WeatherScreen> {
         ],
       ),
       body: FutureBuilder(
-        future: getWeather(),
+        future: weather,
         builder: (context, snapshot) {
           print(snapshot);
           print(snapshot.hasData);
+          var data = snapshot.data;
+          var tem = data!['list'][0]['main']['temp'] - 273.15;
+          String desc = data!['list'][0]['weather'][0]['main'];
 
           return Padding(
             padding: const EdgeInsets.all(10.0),
@@ -94,7 +100,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
                         Icon(Icons.cloud, size: 50),
                         SizedBox(height: 10),
                         Text(
-                          'Cloudy',
+                          desc,
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
