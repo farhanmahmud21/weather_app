@@ -19,7 +19,7 @@ class AdInfoCard extends StatelessWidget {
         SizedBox(height: 5),
         Text(AdText),
         SizedBox(height: 5),
-        Text(AdTemp),
+        Text("$AdTemp "),
       ],
     );
   }

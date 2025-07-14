@@ -68,8 +68,12 @@ class _WeatherScreenState extends State<WeatherScreen> {
           print(snapshot);
           print(snapshot.hasData);
           var data = snapshot.data;
-          var tem = data!['list'][0]['main']['temp'] - 273.15;
+          var tem = data?['list'][0]['main']['temp'] - 273.15;
           String desc = data!['list'][0]['weather'][0]['main'];
+          var humidity=data['list'][0]['main']['humidity'];
+          var windSpeed=data["list"][0]['wind']['speed'];
+          var pressure=data['list'][0]['main']['pressure'];
+
 
           return Padding(
             padding: const EdgeInsets.all(10.0),
@@ -97,7 +101,16 @@ class _WeatherScreenState extends State<WeatherScreen> {
                           ),
                         ),
                         SizedBox(height: 10),
-                        Icon(Icons.cloud, size: 50),
+                        Icon(
+                          desc == "Rain"
+                              ? Icons.cloudy_snowing
+                              : desc == "Sunny"
+                                  ? Icons.sunny
+                                  : desc == "Cloudy"
+                                      ? Icons.cloud
+                                      : Icons.help_outline,
+                          size: 50,
+                        ),
                         SizedBox(height: 10),
                         Text(
                           desc,
@@ -140,18 +153,18 @@ class _WeatherScreenState extends State<WeatherScreen> {
                   children: [
                     AdInfoCard(
                       AdText: 'Humidity',
-                      adIcon: Icons.water_drop_sharp,
-                      AdTemp: '30',
+                      adIcon: Icons.blur_on_rounded,
+                      AdTemp: "$humidity% ",
                     ),
                     AdInfoCard(
-                      AdText: 'Humidity',
-                      adIcon: Icons.water_drop_sharp,
-                      AdTemp: '30',
+                      AdText: 'Wind Speed',
+                      adIcon: Icons.wind_power_outlined,
+                      AdTemp:"$windSpeed km/h",
                     ),
                     AdInfoCard(
                       AdText: 'Pressure',
                       adIcon: Icons.beach_access_sharp,
-                      AdTemp: '30',
+                      AdTemp: "$pressure",
                     ),
                   ],
                 ),
