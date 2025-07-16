@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import 'package:http/http.dart' as http;
@@ -17,22 +16,29 @@ class WeatherScreen extends StatefulWidget {
 class _WeatherScreenState extends State<WeatherScreen> {
   late Future<Map<String, dynamic>> weather;
   double temp = 0;
+  String selectedCity = 'Dhaka';
+  final List<String> cities = [
+    'Dhaka',
+    'London',
+    'New York',
+    'Tokyo',
+    'Sydney',
+  ];
+
   @override
   void initState() {
     super.initState();
-    weather = getWeather();
+    weather = getWeather(selectedCity);
   }
 
-  var uri =
-      "https://api.openweathermap.org/data/2.5/forecast?q=Dhaka,bd&APPID=38f91636dd15e933a6c1c872df8048df";
-  Future<Map<String, dynamic>> getWeather() async {
-    var response = await http.get(Uri.parse(uri));
-    var decodedData = json.decode(response.body);
-    // print(response.body);
-    // print(decodedData);
-    // print(response.body);
+  String getApiUrl(String city) {
+    return "https://api.openweathermap.org/data/2.5/forecast?q=$city&APPID=38f91636dd15e933a6c1c872df8048df";
+  }
 
-    // temp = decodedData['list'][0]['main']['temp'] - 273.15;
+  Future<Map<String, dynamic>> getWeather(String city) async {
+    final apiUrl = getApiUrl(city);
+    var response = await http.get(Uri.parse(apiUrl));
+    var decodedData = json.decode(response.body);
 
     if (decodedData['cod'] == '200') {
       setState(() {
@@ -42,7 +48,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
       print(temp);
       return decodedData;
     } else {
-      throw "Throwed an exception";
+      throw "Failed to fetch weather data for $city";
     }
   }
 
@@ -52,14 +58,54 @@ class _WeatherScreenState extends State<WeatherScreen> {
       appBar: AppBar(
         title: Text('Weather App'),
         actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: DropdownButton<String>(
+              hint: Text(
+                selectedCity,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              value: selectedCity,
+              icon: const Icon(Icons.arrow_drop_down, color: Colors.white70),
+              elevation: 16,
+              style: const TextStyle(color: Colors.black),
+              underline: Container(height: 0, color: Colors.transparent),
+              dropdownColor: Colors.white,
+              onChanged: (String? newValue) {
+                if (newValue != null) {
+                  setState(() {
+                    selectedCity = newValue;
+                    weather = getWeather(selectedCity);
+                  });
+                }
+              },
+              items:
+                  cities.map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(
+                        value,
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+            ),
+          ),
           GestureDetector(
             child: Icon(Icons.refresh),
             onTap: () {
               setState(() {
-                getWeather();
+                weather = getWeather(selectedCity);
               });
             },
           ),
+          SizedBox(width: 10),
         ],
       ),
       body: FutureBuilder<Map<String, dynamic>>(
@@ -73,7 +119,30 @@ class _WeatherScreenState extends State<WeatherScreen> {
           }
 
           if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, size: 60, color: Colors.red),
+                  SizedBox(height: 16),
+                  Text(
+                    'Error loading weather data',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 8),
+                  Text('${snapshot.error}', textAlign: TextAlign.center),
+                  SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        weather = getWeather(selectedCity);
+                      });
+                    },
+                    child: Text('Try Again'),
+                  ),
+                ],
+              ),
+            );
           }
 
           if (!snapshot.hasData || snapshot.data == null) {
@@ -107,12 +176,24 @@ class _WeatherScreenState extends State<WeatherScreen> {
                       mainAxisSize: MainAxisSize.max,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          '${tem.toStringAsFixed(2)} ° C ',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        Column(
+                          children: [
+                            Text(
+                              selectedCity,
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              '${tem.toStringAsFixed(2)} ° C',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                         SizedBox(height: 10),
                         Icon(
