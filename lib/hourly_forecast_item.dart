@@ -1,38 +1,56 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class HourlyForecastItem extends StatelessWidget {
-  const HourlyForecastItem({super.key});
+  // final List<dynamic>? forecastList;
+  final Map<String, dynamic> data;
+
+  const HourlyForecastItem({super.key, required this.data});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        weather_card(
-          time: '9:00',
-          weatherIcon: Icons.cloud,
-          weatherName: 'Cloudy',
-        ),
-        weather_card(
-          time: '9:00',
-          weatherIcon: Icons.cloudy_snowing,
-          weatherName: 'Rainy',
-        ),
-        weather_card(
-          time: '9:00',
-          weatherIcon: Icons.cloudy_snowing,
-          weatherName: 'Rainy',
-        ),
-        weather_card(
-          time: '9:00',
-          weatherIcon: Icons.cloudy_snowing,
-          weatherName: 'Rainy',
-        ),
-        weather_card(
-          time: '9:00',
-          weatherIcon: Icons.cloudy_snowing,
-          weatherName: 'Rainy',
-        ),
-      ],
+    return SizedBox(
+      height: 130,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount:
+            data != null
+                ? data['list'].length > 5
+                    ? 5
+                    : data['list'].length
+                : 0,
+        itemBuilder: (context, index) {
+          // final hourData = forecastList![index + 1];
+          // final timeString = hourData['dt_txt'].toString();
+          // final time = timeString.substring(11, 16);
+          // final weatherCondition = hourData['weather'][0]['main'];
+          final hourlyForecast = data['list'][index + 1];
+          final hourlySky = data['list'][index + 1]['weather'][0]['main'];
+          final hourlyTemp = (hourlyForecast['main']['temp'] - 273.15)
+              .toStringAsFixed(2);
+          final time = DateTime.parse(hourlyForecast['dt_txt']);
+
+          // IconData weatherIcon;
+          // if (weatherCondition == 'Rain') {
+          //   weatherIcon = Icons.cloudy_snowing;
+          // } else if (weatherCondition == 'Clear') {
+          //   weatherIcon = Icons.sunny;
+          // } else if (weatherCondition == 'Clouds') {
+          //   weatherIcon = Icons.cloud;
+          // } else {
+          //   weatherIcon = Icons.help_outline;
+          // }
+
+          return weather_card(
+            time: DateFormat.j().format(time),
+            weatherIcon:
+                hourlySky == 'Clouds' || hourlySky == 'Rain'
+                    ? Icons.cloud
+                    : Icons.sunny,
+            weatherName: "$hourlyTemp °C",
+          );
+        },
+      ),
     );
   }
 }

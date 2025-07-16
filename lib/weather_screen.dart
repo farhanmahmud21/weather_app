@@ -62,18 +62,33 @@ class _WeatherScreenState extends State<WeatherScreen> {
           ),
         ],
       ),
-      body: FutureBuilder(
+      body: FutureBuilder<Map<String, dynamic>>(
         future: weather,
         builder: (context, snapshot) {
           print(snapshot);
           print(snapshot.hasData);
-          var data = snapshot.data;
-          var tem = data?['list'][0]['main']['temp'] - 273.15;
-          String desc = data!['list'][0]['weather'][0]['main'];
-          var humidity=data['list'][0]['main']['humidity'];
-          var windSpeed=data["list"][0]['wind']['speed'];
-          var pressure=data['list'][0]['main']['pressure'];
 
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+
+          if (!snapshot.hasData || snapshot.data == null) {
+            return const Center(child: Text('No data available'));
+          }
+
+          var data = snapshot.data!;
+
+          // Safely handle temperature calculation
+          double tempKelvin = data['list'][0]['main']['temp'];
+          var tem = tempKelvin - 273.15;
+          String desc = data['list'][0]['weather'][0]['main'];
+          var humidity = data['list'][0]['main']['humidity'];
+          var windSpeed = data["list"][0]['wind']['speed'];
+          var pressure = data['list'][0]['main']['pressure'];
 
           return Padding(
             padding: const EdgeInsets.all(10.0),
@@ -86,15 +101,14 @@ class _WeatherScreenState extends State<WeatherScreen> {
                     shadowColor: Colors.white,
                     elevation: 2,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadiusGeometry.circular(14),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                     child: Column(
-                      spacing: 10,
                       mainAxisSize: MainAxisSize.max,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          '${temp.toStringAsFixed(2)} ° C ',
+                          '${tem.toStringAsFixed(2)} ° C ',
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -105,10 +119,10 @@ class _WeatherScreenState extends State<WeatherScreen> {
                           desc == "Rain"
                               ? Icons.cloudy_snowing
                               : desc == "Sunny"
-                                  ? Icons.sunny
-                                  : desc == "Cloudy"
-                                      ? Icons.cloud
-                                      : Icons.help_outline,
+                              ? Icons.sunny
+                              : desc == "Clouds"
+                              ? Icons.cloud
+                              : Icons.help_outline,
                           size: 50,
                         ),
                         SizedBox(height: 10),
@@ -134,10 +148,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
                   ),
                 ),
                 SizedBox(height: 20),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: HourlyForecastItem(),
-                ),
+                HourlyForecastItem(data: data),
                 SizedBox(height: 20),
                 Text(
                   'Additional Information',
@@ -159,7 +170,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
                     AdInfoCard(
                       AdText: 'Wind Speed',
                       adIcon: Icons.wind_power_outlined,
-                      AdTemp:"$windSpeed km/h",
+                      AdTemp: "$windSpeed km/h",
                     ),
                     AdInfoCard(
                       AdText: 'Pressure',
