@@ -26,8 +26,12 @@ class HourlyForecastItem extends StatelessWidget {
           // final weatherCondition = hourData['weather'][0]['main'];
           final hourlyForecast = data['list'][index + 1];
           final hourlySky = data['list'][index + 1]['weather'][0]['main'];
-          final hourlyTemp = (hourlyForecast['main']['temp'] - 273.15)
-              .toStringAsFixed(2);
+
+          // Handle potential integer value in temperature data
+          var tempValue = hourlyForecast['main']['temp'];
+          double tempKelvin =
+              (tempValue is int) ? tempValue.toDouble() : tempValue;
+          final hourlyTemp = (tempKelvin - 273.15).toStringAsFixed(2);
           final time = DateTime.parse(hourlyForecast['dt_txt']);
 
           // IconData weatherIcon;

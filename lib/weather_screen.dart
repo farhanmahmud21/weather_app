@@ -16,27 +16,35 @@ class WeatherScreen extends StatefulWidget {
 class _WeatherScreenState extends State<WeatherScreen> {
   late Future<Map<String, dynamic>> weather;
   double temp = 0;
-  String selectedCity = 'Dhaka';
-  final List<String> cities = [
-    'Dhaka',
-    'London',
-    'New York',
-    'Tokyo',
-    'Sydney',
+
+  // List of available cities with their country codes
+  final List<Map<String, String>> cities = [
+    {"name": "Dhaka", "code": "bd"},
+    {"name": "London", "code": "uk"},
+    {"name": "New York", "code": "us"},
+    {"name": "Tokyo", "code": "jp"},
+    {"name": "Sydney", "code": "au"},
   ];
+
+  // Default selected city
+  String selectedCity = "Dhaka";
+  String selectedCountryCode = "bd";
 
   @override
   void initState() {
     super.initState();
-    weather = getWeather(selectedCity);
+    weather = getWeather(selectedCity, selectedCountryCode);
   }
 
-  String getApiUrl(String city) {
-    return "https://api.openweathermap.org/data/2.5/forecast?q=$city&APPID=38f91636dd15e933a6c1c872df8048df";
+  String getApiUrl(String city, String countryCode) {
+    return "https://api.openweathermap.org/data/2.5/forecast?q=$city,$countryCode&APPID=38f91636dd15e933a6c1c872df8048df";
   }
 
-  Future<Map<String, dynamic>> getWeather(String city) async {
-    final apiUrl = getApiUrl(city);
+  Future<Map<String, dynamic>> getWeather(
+    String city,
+    String countryCode,
+  ) async {
+    final apiUrl = getApiUrl(city, countryCode);
     var response = await http.get(Uri.parse(apiUrl));
     var decodedData = json.decode(response.body);
 
@@ -45,10 +53,10 @@ class _WeatherScreenState extends State<WeatherScreen> {
         temp = decodedData['list'][0]['main']['temp'] - 273.15;
       });
 
-      print(temp);
+      print("Weather data loaded for $city, $countryCode");
       return decodedData;
     } else {
-      throw "Failed to fetch weather data for $city";
+      throw "Failed to load weather data for $city";
     }
   }
 
@@ -56,56 +64,64 @@ class _WeatherScreenState extends State<WeatherScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Weather App'),
+        title: Row(
+          children: [
+            Icon(Icons.cloud),
+            SizedBox(width: 8),
+            Text('Weather Forecast'),
+          ],
+        ),
         actions: [
+          // City selection dropdown
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: DropdownButton<String>(
-              hint: Text(
-                selectedCity,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
               value: selectedCity,
-              icon: const Icon(Icons.arrow_drop_down, color: Colors.white70),
+              icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
+              iconSize: 24,
               elevation: 16,
-              style: const TextStyle(color: Colors.black),
-              underline: Container(height: 0, color: Colors.transparent),
-              dropdownColor: Colors.white,
-              onChanged: (String? newValue) {
-                if (newValue != null) {
+              style: const TextStyle(color: Colors.white),
+              dropdownColor: Theme.of(context).primaryColor,
+              underline: Container(), // Remove the underline
+              onChanged: (String? newCity) {
+                if (newCity != null) {
                   setState(() {
-                    selectedCity = newValue;
-                    weather = getWeather(selectedCity);
+                    selectedCity = newCity;
+                    // Find the country code for the selected city
+                    selectedCountryCode =
+                        cities.firstWhere(
+                          (city) => city["name"] == newCity,
+                          orElse: () => {"name": "Dhaka", "code": "bd"},
+                        )["code"]!;
+
+                    // Refresh weather data with new city
+                    weather = getWeather(selectedCity, selectedCountryCode);
                   });
                 }
               },
               items:
-                  cities.map<DropdownMenuItem<String>>((String value) {
+                  cities.map<DropdownMenuItem<String>>((
+                    Map<String, String> city,
+                  ) {
                     return DropdownMenuItem<String>(
-                      value: value,
+                      value: city["name"],
                       child: Text(
-                        value,
-                        style: const TextStyle(
-                          color: Colors.black,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        city["name"]!,
+                        style: TextStyle(color: Colors.white),
                       ),
                     );
                   }).toList(),
             ),
           ),
-          GestureDetector(
-            child: Icon(Icons.refresh),
-            onTap: () {
+          // Refresh button
+          IconButton(
+            icon: Icon(Icons.refresh),
+            onPressed: () {
               setState(() {
-                weather = getWeather(selectedCity);
+                weather = getWeather(selectedCity, selectedCountryCode);
               });
             },
           ),
-          SizedBox(width: 10),
         ],
       ),
       body: FutureBuilder<Map<String, dynamic>>(
@@ -119,30 +135,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
           }
 
           if (snapshot.hasError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.error_outline, size: 60, color: Colors.red),
-                  SizedBox(height: 16),
-                  Text(
-                    'Error loading weather data',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 8),
-                  Text('${snapshot.error}', textAlign: TextAlign.center),
-                  SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        weather = getWeather(selectedCity);
-                      });
-                    },
-                    child: Text('Try Again'),
-                  ),
-                ],
-              ),
-            );
+            return Center(child: Text('Error: ${snapshot.error}'));
           }
 
           if (!snapshot.hasData || snapshot.data == null) {
@@ -151,8 +144,11 @@ class _WeatherScreenState extends State<WeatherScreen> {
 
           var data = snapshot.data!;
 
-          // Safely handle temperature calculation
-          double tempKelvin = data['list'][0]['main']['temp'];
+          // Safely handle temperature calculation with explicit type conversion
+          double tempKelvin =
+              (data['list'][0]['main']['temp'] is int)
+                  ? (data['list'][0]['main']['temp'] as int).toDouble()
+                  : data['list'][0]['main']['temp'];
           var tem = tempKelvin - 273.15;
           String desc = data['list'][0]['weather'][0]['main'];
           var humidity = data['list'][0]['main']['humidity'];
@@ -176,30 +172,26 @@ class _WeatherScreenState extends State<WeatherScreen> {
                       mainAxisSize: MainAxisSize.max,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Column(
-                          children: [
-                            Text(
-                              selectedCity,
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              '${tem.toStringAsFixed(2)} ° C',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
+                        Text(
+                          selectedCity,
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 5),
+                        Text(
+                          '${tem.toStringAsFixed(2)} ° C ',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         SizedBox(height: 10),
                         Icon(
                           desc == "Rain"
                               ? Icons.cloudy_snowing
-                              : desc == "Sunny"
+                              : desc == "Clear"
                               ? Icons.sunny
                               : desc == "Clouds"
                               ? Icons.cloud
